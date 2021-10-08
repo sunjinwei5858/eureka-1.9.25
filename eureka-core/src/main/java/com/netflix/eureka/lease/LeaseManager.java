@@ -19,6 +19,8 @@ package com.netflix.eureka.lease;
 import com.netflix.eureka.registry.AbstractInstanceRegistry;
 
 /**
+ * 租约管理器， 实例 注册 续约 下线 剔除 接口
+ *
  * This class is responsible for creating/renewing and evicting a <em>lease</em>
  * for a particular instance.
  *
@@ -36,6 +38,7 @@ import com.netflix.eureka.registry.AbstractInstanceRegistry;
 public interface LeaseManager<T> {
 
     /**
+     * 注册
      * Assign a new {@link Lease} to the passed in {@link T}.
      *
      * @param r
@@ -47,6 +50,7 @@ public interface LeaseManager<T> {
     void register(T r, int leaseDuration, boolean isReplication);
 
     /**
+     * 下线
      * Cancel the {@link Lease} associated w/ the passed in <code>appName</code>
      * and <code>id</code>.
      *
@@ -61,6 +65,7 @@ public interface LeaseManager<T> {
     boolean cancel(String appName, String id, boolean isReplication);
 
     /**
+     * 续约
      * Renew the {@link Lease} associated w/ the passed in <code>appName</code>
      * and <code>id</code>.
      *

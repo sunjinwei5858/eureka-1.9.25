@@ -20,6 +20,8 @@ import java.util.List;
 import com.netflix.appinfo.InstanceInfo;
 
 /**
+ * 获取应用Application 和 instance列表
+ *
  * Lookup service for finding active instances.
  *
  * @author Karthik Ranganathan, Greg Kim.

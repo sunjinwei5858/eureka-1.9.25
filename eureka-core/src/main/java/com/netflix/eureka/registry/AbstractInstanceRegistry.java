@@ -62,6 +62,7 @@ import org.slf4j.LoggerFactory;
 import static com.netflix.eureka.util.EurekaMonitors.*;
 
 /**
+ * 注册中心实现抽象类，真正保存服务实例的地方，注册实例，下线实例，续约等操作都在这里。
  * Handles all registry requests from eureka clients.
  *
  * <p>
@@ -77,9 +78,16 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     private static final Logger logger = LoggerFactory.getLogger(AbstractInstanceRegistry.class);
 
     private static final String[] EMPTY_STR_ARRAY = new String[0];
-    private final ConcurrentHashMap<String, Map<String, Lease<InstanceInfo>>> registry
-            = new ConcurrentHashMap<String, Map<String, Lease<InstanceInfo>>>();
+
+    /**
+     * 双层Map结构
+     * 外层的key：appName， value是instance集合
+     * 内层的key：instanceId，value是租约信息
+     */
+    private final ConcurrentHashMap<String, Map<String, Lease<InstanceInfo>>> registry = new ConcurrentHashMap<String, Map<String, Lease<InstanceInfo>>>();
+
     protected Map<String, RemoteRegionRegistry> regionNameVSRemoteRegistry = new HashMap<String, RemoteRegionRegistry>();
+
     protected final ConcurrentMap<String, InstanceStatus> overriddenInstanceStatusMap = CacheBuilder
             .newBuilder().initialCapacity(500)
             .expireAfterAccess(1, TimeUnit.HOURS)
