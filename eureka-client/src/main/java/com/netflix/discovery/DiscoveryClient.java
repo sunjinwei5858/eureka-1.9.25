@@ -436,8 +436,12 @@ public class DiscoveryClient implements EurekaClient {
             throw new RuntimeException("Failed to initialize DiscoveryClient!", e);
         }
 
+        /**
+         * !!!!Eureka Client 启动时全量抓取注册表
+         */
         if (clientConfig.shouldFetchRegistry()) {
             try {
+                // 拉取注册表：全量抓取和增量抓取
                 boolean primaryFetchRegistryResult = fetchRegistry(false);
                 if (!primaryFetchRegistryResult) {
                     logger.info("Initial registry fetch from primary servers failed");
@@ -976,6 +980,7 @@ public class DiscoveryClient implements EurekaClient {
     }
 
     /**
+     * 向server抓取注册表
      * Fetches the registry information.
      *
      * <p>
@@ -1009,10 +1014,13 @@ public class DiscoveryClient implements EurekaClient {
                 logger.info("Registered Applications size is zero : {}",
                         (applications.getRegisteredApplications().size() == 0));
                 logger.info("Application version is -1: {}", (applications.getVersion() == -1));
+                // 全量抓取注册表
                 getAndStoreFullRegistry();
             } else {
+                // 增量更新注册表
                 getAndUpdateDelta(applications);
             }
+            // 计算hash值 设置到本地
             applications.setAppsHashCode(applications.getReconcileHashCode());
             logTotalInstances();
         } catch (Throwable e) {
@@ -1025,6 +1033,7 @@ public class DiscoveryClient implements EurekaClient {
         }
 
         // Notify about cache refresh before updating the instance remote status
+        // 发出缓存刷新的通知
         onCacheRefreshed();
 
         // Update remote status based on refreshed data held in the cache
@@ -1077,6 +1086,7 @@ public class DiscoveryClient implements EurekaClient {
     }
 
     /**
+     * 抓取全量注册表信息并且保存在本地
      * Gets the full registry information from the eureka server and stores it locally.
      * When applying the full registry, the following flow is observed:
      *
@@ -1095,6 +1105,7 @@ public class DiscoveryClient implements EurekaClient {
 
         Applications apps = null;
         EurekaHttpResponse<Applications> httpResponse = clientConfig.getRegistryRefreshSingleVipAddress() == null
+                // 调用 server GET /apps 全量抓取注册表
                 ? eurekaTransport.queryClient.getApplications(remoteRegionsRef.get())
                 : eurekaTransport.queryClient.getVip(clientConfig.getRegistryRefreshSingleVipAddress(), remoteRegionsRef.get());
         if (httpResponse.getStatusCode() == Status.OK.getStatusCode()) {
