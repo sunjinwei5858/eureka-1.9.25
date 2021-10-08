@@ -80,6 +80,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     private static final String[] EMPTY_STR_ARRAY = new String[0];
 
     /**
+     * eureka server服务端的注册表结构 ：
      * 双层Map结构
      * 外层的key：appName， value是instance集合
      * 内层的key：instanceId，value是租约信息
