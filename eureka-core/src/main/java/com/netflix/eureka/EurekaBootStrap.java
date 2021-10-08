@@ -50,6 +50,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * EurekaBootStrap 是监听器的入口，实现了 ServletContextListener 接口，主要完成了 eureka server 的启动初始化。
  * The class that kick starts the eureka server.
  *
  * <p>
