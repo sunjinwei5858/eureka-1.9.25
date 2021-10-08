@@ -112,8 +112,14 @@ public class ResponseCacheImpl implements ResponseCache {
                 }
             });
 
+    /**
+     * 只读缓存
+     */
     private final ConcurrentMap<Key, Value> readOnlyCacheMap = new ConcurrentHashMap<Key, Value>();
 
+    /**
+     * 读写缓存
+     */
     private final LoadingCache<Key, Value> readWriteCacheMap;
     private final boolean shouldUseReadOnlyResponseCache;
     private final AbstractInstanceRegistry registry;
