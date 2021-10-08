@@ -4,6 +4,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
 	http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+  <!-- eureka 启动初始化类 -->
   <listener>
     <listener-class>com.netflix.eureka.EurekaBootStrap</listener-class>
   </listener>
@@ -26,6 +27,7 @@
     <filter-class>com.netflix.eureka.GzipEncodingEnforcingFilter</filter-class>
   </filter>
 
+  <!-- jersey 容器 -->
   <filter>
     <filter-name>jersey</filter-name>
     <filter-class>com.sun.jersey.spi.container.servlet.ServletContainer</filter-class>
