@@ -1,6 +1,7 @@
 package com.netflix.eureka.util.batcher;
 
 /**
+ * TaskDispatcher 用于创建 批量分发器batchingDispatcher
  * See {@link TaskDispatcher} for an overview.
  *
  * @author Tomasz Bak
@@ -32,6 +33,20 @@ public class TaskDispatchers {
         };
     }
 
+    /**
+     *
+     * @param id
+     * @param maxBufferSize
+     * @param workloadSize
+     * @param workerCount
+     * @param maxBatchingDelay
+     * @param congestionRetryDelayMs
+     * @param networkFailureRetryMs
+     * @param taskProcessor
+     * @param <ID>
+     * @param <T>
+     * @return
+     */
     public static <ID, T> TaskDispatcher<ID, T> createBatchingTaskDispatcher(String id,
                                                                              int maxBufferSize,
                                                                              int workloadSize,

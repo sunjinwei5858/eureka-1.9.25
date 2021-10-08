@@ -88,6 +88,7 @@ import com.netflix.servo.monitor.Monitors;
 import com.netflix.servo.monitor.Stopwatch;
 
 /**
+ * EurekaClient，其默认实现类是 DiscoveryClient。DiscoveryClient 包含了 eureka 客户端的大部分核心功能，比如服务注册、续约、维持心跳、拉取注册表等。
  * The class that is instrumental for interactions with <tt>Eureka Server</tt>.
  *
  * <p>

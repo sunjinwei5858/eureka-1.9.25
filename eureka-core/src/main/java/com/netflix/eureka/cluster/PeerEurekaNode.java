@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * 集群间同步核心的组件
  * The <code>PeerEurekaNode</code> represents a peer node to which information
  * should be shared from this node.
  *
@@ -101,6 +102,8 @@ public class PeerEurekaNode {
 
         String batcherName = getBatcherName();
         ReplicationTaskProcessor taskProcessor = new ReplicationTaskProcessor(targetHost, replicationClient);
+
+        // 初始化 批量任务分发器
         this.batchingDispatcher = TaskDispatchers.createBatchingTaskDispatcher(
                 batcherName,
                 config.getMaxElementsInPeerReplicationPool(),
@@ -132,11 +135,16 @@ public class PeerEurekaNode {
      * @throws Exception
      */
     public void register(final InstanceInfo info) throws Exception {
+        // 计算过期时间
         long expiryTime = System.currentTimeMillis() + getLeaseRenewalOf(info);
+        // 调用批量任务分发器，它会将任务打成一个批次提交到 eureka-server，避免多次请求eureka-server，注册时就是先用这个分发器提交的任务
+        // !!!! 批量 避免每次都同步
+        // 是在 PeerEurekaNode 的构造方法中初始化的
         batchingDispatcher.process(
                 taskId("register", info),
                 new InstanceReplicationTask(targetHost, Action.Register, info, null, true) {
                     public EurekaHttpResponse<Void> execute() {
+                        // 同步到server
                         return replicationClient.register(info);
                     }
                 },
