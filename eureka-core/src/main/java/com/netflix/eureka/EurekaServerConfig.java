@@ -312,6 +312,7 @@ public interface EurekaServerConfig {
     long getResponseCacheUpdateIntervalMs();
 
     /**
+     * server的配置
      * The {@link com.netflix.eureka.registry.ResponseCache} currently uses a two level caching
      * strategy to responses. A readWrite cache with an expiration policy, and a readonly cache
      * that caches without expiry.

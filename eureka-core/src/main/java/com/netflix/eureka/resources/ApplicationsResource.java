@@ -99,6 +99,7 @@ public class ApplicationsResource {
     }
 
     /**
+     * server获取全量注册表的接口 get请求，/apps
      * Get information about all {@link com.netflix.discovery.shared.Applications}.
      *
      * @param version the version of the request.
@@ -145,6 +146,7 @@ public class ApplicationsResource {
             returnMediaType = MediaType.APPLICATION_XML;
         }
 
+        // 全量注册表的缓存key => ALL_APPS
         Key cacheKey = new Key(Key.EntityType.Application,
                 ResponseCacheImpl.ALL_APPS,
                 keyType, CurrentRequestVersion.get(), EurekaAccept.fromString(eurekaAccept), regions
@@ -152,11 +154,13 @@ public class ApplicationsResource {
 
         Response response;
         if (acceptEncoding != null && acceptEncoding.contains(HEADER_GZIP_VALUE)) {
+            // 获取压缩数据
             response = Response.ok(responseCache.getGZIP(cacheKey))
                     .header(HEADER_CONTENT_ENCODING, HEADER_GZIP_VALUE)
                     .header(HEADER_CONTENT_TYPE, returnMediaType)
                     .build();
         } else {
+            // 获取没有压缩数据
             response = Response.ok(responseCache.get(cacheKey))
                     .build();
         }

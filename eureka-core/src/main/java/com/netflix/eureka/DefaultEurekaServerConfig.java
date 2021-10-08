@@ -339,18 +339,30 @@ public class DefaultEurekaServerConfig implements EurekaServerConfig {
                 (10 * 60 * 1000)).get();  // defaults to longer than the asg update interval
     }
 
+    /**
+     * 默认180s
+     * @return
+     */
     @Override
     public long getResponseCacheAutoExpirationInSeconds() {
         return configInstance.getIntProperty(
                 namespace + "responseCacheAutoExpirationInSeconds", 180).get();
     }
 
+    /**
+     * 默认30s
+     * @return
+     */
     @Override
     public long getResponseCacheUpdateIntervalMs() {
         return configInstance.getIntProperty(
                 namespace + "responseCacheUpdateIntervalMs", (30 * 1000)).get();
     }
 
+    /**
+     * 默认为true
+     * @return
+     */
     @Override
     public boolean shouldUseReadOnlyResponseCache() {
         return configInstance.getBooleanProperty(

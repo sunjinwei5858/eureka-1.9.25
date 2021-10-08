@@ -15,6 +15,7 @@ public interface ResponseCache {
     AtomicLong getVersionDeltaWithRegions();
 
     /**
+     * 没有压缩
      * Get the cached information about applications.
      *
      * <p>
@@ -29,6 +30,7 @@ public interface ResponseCache {
      String get(Key key);
 
     /**
+     * 进行了压缩的数据
      * Get the compressed information about the applications.
      *
      * @param key the key for which the compressed cached information needs to be obtained.

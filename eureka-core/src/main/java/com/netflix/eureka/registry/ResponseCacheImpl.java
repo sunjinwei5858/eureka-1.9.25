@@ -129,12 +129,21 @@ public class ResponseCacheImpl implements ResponseCache {
     ResponseCacheImpl(EurekaServerConfig serverConfig, ServerCodecs serverCodecs, AbstractInstanceRegistry registry) {
         this.serverConfig = serverConfig;
         this.serverCodecs = serverCodecs;
+        /**
+         * 点进去发现 默认是true 可以配置为false
+         */
         this.shouldUseReadOnlyResponseCache = serverConfig.shouldUseReadOnlyResponseCache();
         this.registry = registry;
 
         long responseCacheUpdateIntervalMs = serverConfig.getResponseCacheUpdateIntervalMs();
-        this.readWriteCacheMap =
-                CacheBuilder.newBuilder().initialCapacity(serverConfig.getInitialCapacityOfResponseCache())
+        /**
+         * 是Google提供的一种本地缓存
+         * 1、为什么不放分布式缓存redis里呢？
+         * 放到Redis里，与Redis之间的通信还是需要网络IO的。由于Redis是单线程数据模型，其实并发比较多的场景下，也会成为瓶颈滴。
+         * 如果内存足够并且不需要依赖Redis的一些特性，本地缓存足够。
+         */
+        this.readWriteCacheMap = CacheBuilder.newBuilder().initialCapacity(serverConfig.getInitialCapacityOfResponseCache())
+                        // 1 默认180s
                         .expireAfterWrite(serverConfig.getResponseCacheAutoExpirationInSeconds(), TimeUnit.SECONDS)
                         .removalListener(new RemovalListener<Key, Value>() {
                             @Override
@@ -146,6 +155,7 @@ public class ResponseCacheImpl implements ResponseCache {
                                 }
                             }
                         })
+                        // 2 定义缓存失效后，刷新缓存的逻辑
                         .build(new CacheLoader<Key, Value>() {
                             @Override
                             public Value load(Key key) throws Exception {
@@ -157,7 +167,7 @@ public class ResponseCacheImpl implements ResponseCache {
                                 return value;
                             }
                         });
-
+        // 3 配置定时任务：读写缓存每隔30s 同步到 只读缓存
         if (shouldUseReadOnlyResponseCache) {
             timer.schedule(getCacheUpdateTask(),
                     new Date(((System.currentTimeMillis() / responseCacheUpdateIntervalMs) * responseCacheUpdateIntervalMs)
@@ -212,6 +222,7 @@ public class ResponseCacheImpl implements ResponseCache {
      * @return payload which contains information about the applications.
      */
     public String get(final Key key) {
+        // 默认为true 使用缓存
         return get(key, shouldUseReadOnlyResponseCache);
     }
 
@@ -352,21 +363,26 @@ public class ResponseCacheImpl implements ResponseCache {
     }
 
     /**
+     * 从只读缓存或者读写缓存中获取
      * Get the payload in both compressed and uncompressed form.
      */
     @VisibleForTesting
     Value getValue(final Key key, boolean useReadOnlyCache) {
         Value payload = null;
         try {
+            // 默认为true 从只读缓存中找
             if (useReadOnlyCache) {
+                // 只读缓存中读取
                 final Value currentPayload = readOnlyCacheMap.get(key);
                 if (currentPayload != null) {
                     payload = currentPayload;
                 } else {
+                    // 只读缓存没有 那么就去读写缓存中找
                     payload = readWriteCacheMap.get(key);
                     readOnlyCacheMap.put(key, payload);
                 }
             } else {
+                // 去读写缓存中找
                 payload = readWriteCacheMap.get(key);
             }
         } catch (Throwable t) {
@@ -420,7 +436,7 @@ public class ResponseCacheImpl implements ResponseCache {
             switch (key.getEntityType()) {
                 case Application:
                     boolean isRemoteRegionRequested = key.hasRegions();
-
+                    // 全量
                     if (ALL_APPS.equals(key.getName())) {
                         if (isRemoteRegionRequested) {
                             tracer = serializeAllAppsWithRemoteRegionTimer.start();
@@ -430,12 +446,12 @@ public class ResponseCacheImpl implements ResponseCache {
                             payload = getPayLoad(key, registry.getApplications());
                         }
                     } else if (ALL_APPS_DELTA.equals(key.getName())) {
+                        // 增量
                         if (isRemoteRegionRequested) {
                             tracer = serializeDeltaAppsWithRemoteRegionTimer.start();
                             versionDeltaWithRegions.incrementAndGet();
                             versionDeltaWithRegionsLegacy.incrementAndGet();
-                            payload = getPayLoad(key,
-                                    registry.getApplicationDeltasFromMultipleRegions(key.getRegions()));
+                            payload = getPayLoad(key, registry.getApplicationDeltasFromMultipleRegions(key.getRegions()));
                         } else {
                             tracer = serializeDeltaAppsTimer.start();
                             versionDelta.incrementAndGet();
