@@ -97,6 +97,9 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     // CircularQueues here for debugging/statistics purposes only
     private final CircularQueue<Pair<Long, String>> recentRegisteredQueue;
     private final CircularQueue<Pair<Long, String>> recentCanceledQueue;
+    /**
+     * 增量设计表
+     */
     private ConcurrentLinkedQueue<RecentlyChangedItem> recentlyChangedQueue = new ConcurrentLinkedQueue<RecentlyChangedItem>();
 
     private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
@@ -930,6 +933,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     }
 
     /**
+     * 获取增量设计表
      * Gets the application delta also including instances from the passed remote regions, with the instances from the
      * local region. <br/>
      *
@@ -959,12 +963,17 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
         } else {
             GET_ALL_CACHE_MISS_DELTA.increment();
         }
-
+        // 声明集合存储
         Applications apps = new Applications();
         apps.setVersion(responseCache.getVersionDeltaWithRegions().get());
         Map<String, Application> applicationInstancesMap = new HashMap<String, Application>();
         try {
             write.lock();
+            /**
+             * 增量设计表的数据其实就是recentlyChangedQueue队列里面的数据
+             * 通过遍历recentlyChangedQueue生成applications
+             *  recentlyChangedQueue 只保留了最近3分钟有变化的实例，如实例上线、下线、故障剔除
+             */
             Iterator<RecentlyChangedItem> iter = this.recentlyChangedQueue.iterator();
             logger.debug("The number of elements in the delta queue is :{}", this.recentlyChangedQueue.size());
             while (iter.hasNext()) {
@@ -1005,7 +1014,9 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
                 }
             }
 
+            // 获取所有应用实例
             Applications allApps = getApplicationsFromMultipleRegions(remoteRegions);
+            // 利用所有实例 计算一个hash值 用于客户端client 相比较 保证一致性
             apps.setAppsHashCode(allApps.getReconcileHashCode());
             return apps;
         } finally {
