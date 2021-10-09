@@ -95,7 +95,13 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             .<String, InstanceStatus>build().asMap();
 
     // CircularQueues here for debugging/statistics purposes only
+    /**
+     * 最近注册的循环队列
+     */
     private final CircularQueue<Pair<Long, String>> recentRegisteredQueue;
+    /**
+     * 最近下线的循环队列
+     */
     private final CircularQueue<Pair<Long, String>> recentCanceledQueue;
     /**
      * 增量设计表
@@ -107,6 +113,9 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     private final Lock write = readWriteLock.writeLock();
     protected final Object lock = new Object();
 
+    /**
+     * 一个定时调度任务，定时剔除最近改变队列中过期的实例
+     */
     private Timer deltaRetentionTimer = new Timer("Eureka-DeltaRetentionTimer", true);
     private Timer evictionTimer = new Timer("Eureka-EvictionTimer", true);
     private final MeasuredRate renewsLastMin;
@@ -123,6 +132,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     protected volatile ResponseCache responseCache;
 
     /**
+     * 注册表实例化
      * Create a new, empty instance registry.
      */
     protected AbstractInstanceRegistry(EurekaServerConfig serverConfig, EurekaClientConfig clientConfig, ServerCodecs serverCodecs) {
@@ -134,8 +144,13 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
 
         this.renewsLastMin = new MeasuredRate(1000 * 60 * 1);
 
+        /**
+         * 一个定时调度任务，定时剔除最近改变队列中过期的实例
+         */
         this.deltaRetentionTimer.schedule(getDeltaRetentionTask(),
+                // 调度任务每隔30s开始执行
                 serverConfig.getDeltaRetentionTimerIntervalInMs(),
+                // 默认每隔30s执行一次
                 serverConfig.getDeltaRetentionTimerIntervalInMs());
     }
 
@@ -1357,6 +1372,17 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
         return rule.apply(r, existingLease, isReplication).status();
     }
 
+    /**
+     * 每隔30s执行一次的定时调度任务：
+     * 1 这个任务会遍历recentlyChangedQueue这个队列 判断每个元素的最后更新时间是否超过了180s
+     * 2 如果超过了180s就会从队列中移除这个元素
+     * 3 【因为超过180s的实例变更信息会默认已经同步到客户端了，因为客户端是每隔30s拉取一次增量注册表的】
+     * 因此客户端每次拉取增量注册表可能拉取到同样的变更信息，不过最终合并到本地都是一样的
+     *
+     * 4 因此可以看出 eureka利用recentlyChangedQueue这个最近变更队列保存了最近3min以内的实例的变更信息
+     * 比如服务注册 下线等。然后客户端就是每次拉取这个变更队列
+     * @return
+     */
     private TimerTask getDeltaRetentionTask() {
         return new TimerTask() {
 
@@ -1364,6 +1390,8 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             public void run() {
                 Iterator<RecentlyChangedItem> it = recentlyChangedQueue.iterator();
                 while (it.hasNext()) {
+                    // 当前时间-180s
+                    // 超过180s的 移除队列
                     if (it.next().getLastUpdateTime() <
                             System.currentTimeMillis() - serverConfig.getRetentionTimeInMSInDeltaQueue()) {
                         it.remove();
