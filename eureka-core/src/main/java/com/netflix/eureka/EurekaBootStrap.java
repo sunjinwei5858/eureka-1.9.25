@@ -143,6 +143,7 @@ public class EurekaBootStrap implements ServletContextListener {
     }
 
     /**
+     * 初始化server上下文
      * init hook for server context. Override for custom logic.
      */
     protected void initEurekaServerContext() throws Exception {
@@ -172,6 +173,9 @@ public class EurekaBootStrap implements ServletContextListener {
             applicationInfoManager = eurekaClient.getApplicationInfoManager();
         }
 
+        /**
+         * 初始化PeerAwareInstanceRegistry 就会初始化父类AbstractInstanceRegistry，就会初始化ResponseCache
+         */
         PeerAwareInstanceRegistry registry;
         if (isAws(applicationInfoManager.getInfo())) {
             registry = new AwsInstanceRegistry(

@@ -715,6 +715,10 @@ public class DefaultEurekaServerConfig implements EurekaServerConfig {
                 namespace + "minAvailableInstancesForPeerReplication", -1).get();
     }
 
+    /**
+     * 默认容量是1000
+     * @return
+     */
     @Override
     public int getInitialCapacityOfResponseCache() {
         return configInstance.getIntProperty(namespace + "initialCapacityOfResponseCache", 1000).get();

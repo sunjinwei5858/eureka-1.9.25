@@ -163,6 +163,7 @@ public class ResponseCacheImpl implements ResponseCache {
                                     Key cloneWithNoRegions = key.cloneWithoutRegions();
                                     regionSpecificKeys.put(cloneWithNoRegions, key);
                                 }
+                                // 读写缓存不存在时 重新从注册表中获取元素
                                 Value value = generatePayload(key);
                                 return value;
                             }
@@ -440,9 +441,11 @@ public class ResponseCacheImpl implements ResponseCache {
                     if (ALL_APPS.equals(key.getName())) {
                         if (isRemoteRegionRequested) {
                             tracer = serializeAllAppsWithRemoteRegionTimer.start();
+
                             payload = getPayLoad(key, registry.getApplicationsFromMultipleRegions(key.getRegions()));
                         } else {
                             tracer = serializeAllAppsTimer.start();
+                            // 从注册表中获取所有实例
                             payload = getPayLoad(key, registry.getApplications());
                         }
                     } else if (ALL_APPS_DELTA.equals(key.getName())) {
@@ -451,6 +454,7 @@ public class ResponseCacheImpl implements ResponseCache {
                             tracer = serializeDeltaAppsWithRemoteRegionTimer.start();
                             versionDeltaWithRegions.incrementAndGet();
                             versionDeltaWithRegionsLegacy.incrementAndGet();
+                            // 从注册表中获取增量应用
                             payload = getPayLoad(key, registry.getApplicationDeltasFromMultipleRegions(key.getRegions()));
                         } else {
                             tracer = serializeDeltaAppsTimer.start();
