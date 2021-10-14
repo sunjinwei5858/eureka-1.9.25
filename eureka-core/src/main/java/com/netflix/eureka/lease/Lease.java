@@ -102,6 +102,9 @@ public class Lease<T> {
     }
 
     /**
+     * 如何判断实例是否过期？
+     * 这里面又会加上duration，所以加起来是180s了，因为续约的时候 会更新lastUpdateTimestamp，也会加上一个duration，所以相当于加了两遍duration
+     *
      * Checks if the lease of a given {@link com.netflix.appinfo.InstanceInfo} has expired or not.
      *
      * Note that due to renew() doing the 'wrong" thing and setting lastUpdateTimestamp to +duration more than
