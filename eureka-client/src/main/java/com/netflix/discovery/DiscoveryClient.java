@@ -869,12 +869,14 @@ public class DiscoveryClient implements EurekaClient {
     }
 
     /**
+     * 服务注册
      * Register with the eureka service by making the appropriate REST call.
      */
     boolean register() throws Throwable {
         logger.info(PREFIX + "{}: registering service...", appPathIdentifier);
         EurekaHttpResponse<Void> httpResponse;
         try {
+            // 调用了 eureka-server 的 POST /apps/{appName} 接口
             httpResponse = eurekaTransport.registrationClient.register(instanceInfo);
         } catch (Exception e) {
             logger.warn(PREFIX + "{} - registration failed {}", appPathIdentifier, e.getMessage(), e);
@@ -1442,15 +1444,23 @@ public class DiscoveryClient implements EurekaClient {
     }
 
     /**
+     * 实例信息刷新：
+     * 这种情况一般就是运行期间动态更新实例的配置，然后重新注册实例信息。
      * Refresh the current local instanceInfo. Note that after a valid refresh where changes are observed, the
      * isDirty flag on the instanceInfo is set to true
      */
     void refreshInstanceInfo() {
+        // 1首先刷新了数据中心的信息
         applicationInfoManager.refreshDataCenterInfoIfRequired();
+        // 2然后刷新续约信息：主要就是将eurekaclientconfig的续约配置与本地的续约配置做对比
+        // 如果变更了就重新创建续约信息，并设置实例为dirty
+        // 这种情况一般就是运行期间动态更新实例的配置，然后重新注册实例信息
+        // 如果有必要，就更新续约信息，比如动态更新了配置文件，这时就更新续约信息 LeaseInfo，并将实例设置为 dirty
         applicationInfoManager.refreshLeaseInfoIfRequired();
 
         InstanceStatus status;
         try {
+            // 3接着使用健康检查器检查实例状况
             status = getHealthCheckHandler().getStatus(instanceInfo.getStatus());
         } catch (Exception e) {
             logger.warn("Exception from healthcheckHandler.getStatus, setting status to DOWN", e);
