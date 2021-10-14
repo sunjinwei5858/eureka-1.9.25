@@ -215,6 +215,9 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     }
 
     /**
+     * 服务注册
+     * 1.注册表的数据结构:concurrenthashmap,双层Map
+     *
      * Registers a new instance with a given duration.
      *
      * @see com.netflix.eureka.lease.LeaseManager#register(java.lang.Object, int, boolean)

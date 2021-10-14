@@ -384,6 +384,9 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
     }
 
     /**
+     * 向注册表进行服务注册
+     * 1.调用父类的register方法进行注册
+     * 2.然后同步到eureka server集群中的其他节点
      * Registers the information about the {@link InstanceInfo} and replicates
      * this information to all peer eureka nodes. If this is replication event
      * from other replica nodes then it is not replicated.
@@ -400,7 +403,9 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
         if (info.getLeaseInfo() != null && info.getLeaseInfo().getDurationInSecs() > 0) {
             leaseDuration = info.getLeaseInfo().getDurationInSecs();
         }
+        // 注册实例
         super.register(info, leaseDuration, isReplication);
+        // 复制到集群中的其他节点
         replicateToPeers(Action.Register, info.getAppName(), info.getId(), info, null, isReplication);
     }
 

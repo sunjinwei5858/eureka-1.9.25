@@ -77,6 +77,7 @@ public class ApplicationsResource {
     }
 
     /**
+     *  符合规则 /apps/{appName}
      * Gets information about a particular {@link com.netflix.discovery.shared.Application}.
      *
      * @param version
@@ -86,12 +87,13 @@ public class ApplicationsResource {
      *            application.
      * @return information about a particular application.
      */
-    @Path("{appId}")
+    @Path("{appId}")     // 符合规则 /apps/{appName}
     public ApplicationResource getApplicationResource(
             @PathParam("version") String version,
             @PathParam("appId") String appId) {
         CurrentRequestVersion.set(Version.toEnum(version));
         try {
+            // 真正的入口
             return new ApplicationResource(appId, serverConfig, registry);
         } finally {
             CurrentRequestVersion.remove();
