@@ -375,6 +375,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     }
 
     /**
+     * 抽象父类的续约方法
      * Marks the given instance of the given app name as renewed, and also marks whether it originated from
      * replication.
      *
@@ -382,11 +383,14 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
      */
     public boolean renew(String appName, String id, boolean isReplication) {
         RENEW.increment(isReplication);
+        // 从注册表 找出该实例的续约信息
         Map<String, Lease<InstanceInfo>> gMap = registry.get(appName);
         Lease<InstanceInfo> leaseToRenew = null;
         if (gMap != null) {
+            // 根据instanceId 获取实例
             leaseToRenew = gMap.get(id);
         }
+        // 没有找到 直接返回false
         if (leaseToRenew == null) {
             RENEW_NOT_FOUND.increment(isReplication);
             logger.warn("DS: Registry: lease doesn't exist, registering resource: {} - {}", appName, id);
@@ -395,8 +399,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             InstanceInfo instanceInfo = leaseToRenew.getHolder();
             if (instanceInfo != null) {
                 // touchASGCache(instanceInfo.getASGName());
-                InstanceStatus overriddenInstanceStatus = this.getOverriddenInstanceStatus(
-                        instanceInfo, leaseToRenew, isReplication);
+                InstanceStatus overriddenInstanceStatus = this.getOverriddenInstanceStatus(instanceInfo, leaseToRenew, isReplication);
                 if (overriddenInstanceStatus == InstanceStatus.UNKNOWN) {
                     logger.info("Instance status UNKNOWN possibly due to deleted override for instance {}"
                             + "; re-register required", instanceInfo.getId());
@@ -413,7 +416,10 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
 
                 }
             }
+            // 最近一分钟续约计数器 +1
             renewsLastMin.increment();
+            // 续约：
+            // 更新最后更新时间 在当前时间的基础上加了周期时间 默认90s
             leaseToRenew.renew();
             return true;
         }

@@ -36,6 +36,7 @@ public class Lease<T> {
         Register, Cancel, Renew
     };
 
+    // 续约默认间隔时间为 90s
     public static final int DEFAULT_DURATION_IN_SECS = 90;
 
     private T holder;
@@ -44,6 +45,7 @@ public class Lease<T> {
     private long serviceUpTimestamp;
     // Make it volatile so that the expiration task would see this quicker
     private volatile long lastUpdateTimestamp;
+    // 默认90s
     private long duration;
 
     public Lease(T r, int durationInSecs) {
@@ -55,6 +57,8 @@ public class Lease<T> {
     }
 
     /**
+     * 这里进行续约 这可能是一个bug 为啥要加上duration 其实可以不用
+     *
      * Renew the lease, use renewal duration if it was specified by the
      * associated {@link T} during registration, otherwise default duration is
      * {@link #DEFAULT_DURATION_IN_SECS}.

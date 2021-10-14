@@ -88,6 +88,11 @@ public class InstanceResource {
     }
 
     /**
+     * 服务续约的接口
+     * 进去可以看到，调用了父类的 renew 方法续约，然后会判断 isReplication ，
+     * 如果是复制，说明是来自 eureka-server 集群中其它节点的同步请求，
+     * 就复制到其它节点。复制到其它集群这块代码在前面已经提到过了，就不再展示。
+     *
      * A put request for renewing lease from a client instance.
      *
      * @param isReplication
@@ -108,10 +113,14 @@ public class InstanceResource {
             @QueryParam("overriddenstatus") String overriddenStatus,
             @QueryParam("status") String status,
             @QueryParam("lastDirtyTimestamp") String lastDirtyTimestamp) {
+
         boolean isFromReplicaNode = "true".equals(isReplication);
+
+        // 调用父类的续约方法进行续约
         boolean isSuccess = registry.renew(app.getName(), id, isFromReplicaNode);
 
         // Not found in the registry, immediately ask for a register
+        // 如果注册表没找到 续约失败 返回not_found给客户端
         if (!isSuccess) {
             logger.warn("Not Found (Renew): {} - {}", app.getName(), id);
             return Response.status(Status.NOT_FOUND).build();
