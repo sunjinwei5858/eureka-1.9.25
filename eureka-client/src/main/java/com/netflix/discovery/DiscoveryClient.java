@@ -477,6 +477,9 @@ public class DiscoveryClient implements EurekaClient {
         }
 
         // finally, init the schedule tasks (e.g. cluster resolvers, heartbeat, instanceInfo replicator, fetch
+        /**
+         * 初始化很多定时任务：包括定时发送心跳，向eureka进行服务注册，定时抓取注册表
+         */
         initScheduledTasks();
 
         try {
@@ -889,23 +892,28 @@ public class DiscoveryClient implements EurekaClient {
     }
 
     /**
+     * 调用server的put接口 进行续约
      * Renew with the eureka service by making the appropriate REST call
      */
     boolean renew() {
         EurekaHttpResponse<InstanceInfo> httpResponse;
         try {
+            // 发送心跳的接口：PUT /apps/{appName}/{instanceId}
             httpResponse = eurekaTransport.registrationClient.sendHeartBeat(instanceInfo.getAppName(), instanceInfo.getId(), instanceInfo, null);
             logger.debug(PREFIX + "{} - Heartbeat status: {}", appPathIdentifier, httpResponse.getStatusCode());
+            // 服务端未找到对应的实例，就重新注册
             if (httpResponse.getStatusCode() == Status.NOT_FOUND.getStatusCode()) {
                 REREGISTER_COUNTER.increment();
                 logger.info(PREFIX + "{} - Re-registering apps/{}", appPathIdentifier, instanceInfo.getAppName());
                 long timestamp = instanceInfo.setIsDirtyWithTime();
+                // 服务端未找到对应的实例，就重新注册
                 boolean success = register();
                 if (success) {
                     instanceInfo.unsetIsDirty(timestamp);
                 }
                 return success;
             }
+            // 续约成功
             return httpResponse.getStatusCode() == Status.OK.getStatusCode();
         } catch (Throwable e) {
             logger.error(PREFIX + "{} - was unable to send heartbeat!", appPathIdentifier, e);
@@ -1304,6 +1312,8 @@ public class DiscoveryClient implements EurekaClient {
     }
 
     /**
+     *
+     *
      * Initializes all scheduled tasks.
      */
     private void initScheduledTasks() {
@@ -1331,6 +1341,7 @@ public class DiscoveryClient implements EurekaClient {
             logger.info("Starting heartbeat executor: " + "renew interval is: {}", renewalIntervalInSecs);
 
             // Heartbeat timer
+            // 心跳机制 HeartbeatThread这个线程
             heartbeatTask = new TimedSupervisorTask(
                     "heartbeat",
                     scheduler,
@@ -1345,6 +1356,7 @@ public class DiscoveryClient implements EurekaClient {
                     renewalIntervalInSecs, TimeUnit.SECONDS);
 
             // InstanceInfo replicator
+            // 服务注册
             instanceInfoReplicator = new InstanceInfoReplicator(
                     this,
                     instanceInfo,
@@ -1473,6 +1485,7 @@ public class DiscoveryClient implements EurekaClient {
     }
 
     /**
+     * 发送心跳机制 进行续约
      * The heartbeat task that renews the lease in the given intervals.
      */
     private class HeartbeatThread implements Runnable {
