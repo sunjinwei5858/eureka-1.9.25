@@ -146,6 +146,7 @@ public class ResponseCacheImpl implements ResponseCache {
                         // 1 默认180s
                         .expireAfterWrite(serverConfig.getResponseCacheAutoExpirationInSeconds(), TimeUnit.SECONDS)
                         .removalListener(new RemovalListener<Key, Value>() {
+                            //设置缓存的移除通知
                             @Override
                             public void onRemoval(RemovalNotification<Key, Value> notification) {
                                 Key removedKey = notification.getKey();
@@ -155,7 +156,7 @@ public class ResponseCacheImpl implements ResponseCache {
                                 }
                             }
                         })
-                        // 2 定义缓存失效后，刷新缓存的逻辑
+                        //build方法中可以指定CacheLoader，在缓存不存在时通过CacheLoader的实现自动加载缓存
                         .build(new CacheLoader<Key, Value>() {
                             @Override
                             public Value load(Key key) throws Exception {
