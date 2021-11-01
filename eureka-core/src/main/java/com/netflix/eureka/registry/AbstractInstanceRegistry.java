@@ -217,6 +217,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     /**
      * 服务注册
      * 1.注册表的数据结构:concurrenthashmap,双层Map
+     * 2.服务注册 需要加锁 这里加的是读锁 因为注册是往map中添加数据 所以要上锁
      *
      * Registers a new instance with a given duration.
      *
@@ -224,6 +225,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
      */
     public void register(InstanceInfo registrant, int leaseDuration, boolean isReplication) {
         try {
+            // 加读锁
             read.lock();
             Map<String, Lease<InstanceInfo>> gMap = registry.get(registrant.getAppName());
             REGISTER.increment(isReplication);
@@ -303,6 +305,10 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     }
 
     /**
+     * 服务下线:
+     * 1.需要加锁 ，加的是读锁
+     * 2.下线需要操作recentlyChangedQueue队列
+     *
      * Cancels the registration of an instance.
      *
      * <p>
@@ -328,6 +334,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
      */
     protected boolean internalCancel(String appName, String id, boolean isReplication) {
         try {
+            // 读锁
             read.lock();
             CANCEL.increment(isReplication);
             Map<String, Lease<InstanceInfo>> gMap = registry.get(appName);
@@ -335,6 +342,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             if (gMap != null) {
                 leaseToCancel = gMap.remove(id);
             }
+            // 加入到最近取消队列
             recentCanceledQueue.add(new Pair<Long, String>(System.currentTimeMillis(), appName + "(" + id + ")"));
             InstanceStatus instanceStatus = overriddenInstanceStatusMap.remove(id);
             if (instanceStatus != null) {
@@ -350,6 +358,8 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
                 String vip = null;
                 String svip = null;
                 if (instanceInfo != null) {
+
+                    // 加入到最近变更队列 所以需要加锁
                     instanceInfo.setActionType(ActionType.DELETED);
                     recentlyChangedQueue.add(new RecentlyChangedItem(leaseToCancel));
                     instanceInfo.setLastUpdatedTimestamp();
@@ -375,6 +385,9 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     }
 
     /**
+     * 服务续约：
+     * 1.不需要加锁, 为什么不需要加锁？
+     *  因为续约，不需要对recentlyChangedQueue进行处理，所以这里没有进行加锁
      * 抽象父类的续约方法
      * Marks the given instance of the given app name as renewed, and also marks whether it originated from
      * replication.
