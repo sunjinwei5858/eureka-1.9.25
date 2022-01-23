@@ -108,7 +108,6 @@ public class ResponseCacheImpl implements ResponseCache {
      * 只读缓存【三级缓存】
      */
     private final ConcurrentMap<Key, Value> readOnlyCacheMap = new ConcurrentHashMap<Key, Value>();
-
     /**
      * 读写缓存【二级缓存】
      */
@@ -131,8 +130,7 @@ public class ResponseCacheImpl implements ResponseCache {
         /**
          * 是Google提供的一种本地缓存
          * 1、为什么不放分布式缓存redis里呢？
-         * 放到Redis里，与Redis之间的通信还是需要网络IO的。由于Redis是单线程数据模型，其实并发比较多的场景下，也会成为瓶颈滴。
-         * 如果内存足够并且不需要依赖Redis的一些特性，本地缓存足够。
+         * 放到Redis里，与Redis之间的通信还是需要网络IO的。如果内存足够并且不需要依赖Redis的一些特性，本地缓存足够。
          */
         this.readWriteCacheMap = CacheBuilder.newBuilder().initialCapacity(serverConfig.getInitialCapacityOfResponseCache())
                         // 1 默认180s
