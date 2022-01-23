@@ -105,14 +105,17 @@ public class ResponseCacheImpl implements ResponseCache {
             });
 
     /**
-     * 只读缓存【三级缓存】
+     * 只读缓存【三级缓存】：ConcurrentMap
      */
     private final ConcurrentMap<Key, Value> readOnlyCacheMap = new ConcurrentHashMap<Key, Value>();
     /**
-     * 读写缓存【二级缓存】
+     * 读写缓存【二级缓存】：guava cache
      */
     private final LoadingCache<Key, Value> readWriteCacheMap;
     private final boolean shouldUseReadOnlyResponseCache;
+    /**
+     * 注册表【一级缓存】存储的位置：ConcurrentMap
+     */
     private final AbstractInstanceRegistry registry;
     private final EurekaServerConfig serverConfig;
     private final ServerCodecs serverCodecs;
